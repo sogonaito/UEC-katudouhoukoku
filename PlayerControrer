@@ -1,0 +1,102 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(CharacterController))]
+public class PlayerController : MonoBehaviour
+{
+    [SerializeField] private Transform cameraTransform;
+    [SerializeField] private float moveSpeed = 6f;
+    [SerializeField] private float rotateSpeed = 12f;
+    [SerializeField] private float jumpHeight = 1.8f;
+    [SerializeField] private float gravity = -20f;
+
+    private CharacterController controller;
+    private float verticalSpeed;
+
+    private void Awake()
+    {
+        controller = GetComponent<CharacterController>();
+
+        if (cameraTransform == null && Camera.main != null)
+        {
+            cameraTransform = Camera.main.transform;
+        }
+    }
+
+    private void Update()
+    {
+        Keyboard keyboard = Keyboard.current;
+
+        if (keyboard == null || cameraTransform == null)
+        {
+            return;
+        }
+
+        float x = 0f;
+        float z = 0f;
+
+        if (keyboard.leftArrowKey.isPressed || keyboard.aKey.isPressed)
+        {
+            x = -1f;
+        }
+
+        if (keyboard.rightArrowKey.isPressed || keyboard.dKey.isPressed)
+        {
+            x = 1f;
+        }
+
+        if (keyboard.downArrowKey.isPressed || keyboard.sKey.isPressed)
+        {
+            z = -1f;
+        }
+
+        if (keyboard.upArrowKey.isPressed || keyboard.wKey.isPressed)
+        {
+            z = 1f;
+        }
+
+        Vector3 cameraForward = cameraTransform.forward;
+        cameraForward.y = 0f;
+        cameraForward.Normalize();
+
+        Vector3 cameraRight = cameraTransform.right;
+        cameraRight.y = 0f;
+        cameraRight.Normalize();
+
+        Vector3 moveDirection =
+            cameraForward * z + cameraRight * x;
+
+        if (moveDirection.sqrMagnitude > 0.001f)
+        {
+            moveDirection.Normalize();
+
+            Quaternion targetRotation =
+                Quaternion.LookRotation(moveDirection);
+
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotateSpeed * Time.deltaTime
+            );
+        }
+
+        bool onGround = controller.isGrounded;
+
+        if (onGround && verticalSpeed < 0f)
+        {
+            verticalSpeed = -2f;
+        }
+
+        if (onGround && keyboard.spaceKey.isPressed)
+        {
+            verticalSpeed = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+
+        verticalSpeed += gravity * Time.deltaTime;
+
+        Vector3 totalMove = moveDirection * moveSpeed;
+        totalMove.y = verticalSpeed;
+
+        controller.Move(totalMove * Time.deltaTime);
+    }
+}
