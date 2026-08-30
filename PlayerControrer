@@ -6,16 +6,20 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] private Transform cameraTransform;
     [SerializeField] private float moveSpeed = 6f;
+    [SerializeField] private float slowMoveSpeed = 2.5f;
     [SerializeField] private float rotateSpeed = 12f;
     [SerializeField] private float jumpHeight = 1.8f;
     [SerializeField] private float gravity = -20f;
+    [SerializeField] private float slowAnimationSpeed = 0.5f;
 
     private CharacterController controller;
+    private Animator characterAnimator;
     private float verticalSpeed;
 
     private void Awake()
     {
         controller = GetComponent<CharacterController>();
+        characterAnimator = GetComponentInChildren<Animator>();
 
         if (cameraTransform == null && Camera.main != null)
         {
@@ -30,6 +34,19 @@ public class PlayerController : MonoBehaviour
         if (keyboard == null || cameraTransform == null)
         {
             return;
+        }
+
+        bool isSlow = keyboard.leftShiftKey.isPressed;
+
+        float currentMoveSpeed = isSlow
+            ? slowMoveSpeed
+            : moveSpeed;
+
+        if (characterAnimator != null)
+        {
+            characterAnimator.speed = isSlow
+                ? slowAnimationSpeed
+                : 1f;
         }
 
         float x = 0f;
@@ -94,7 +111,7 @@ public class PlayerController : MonoBehaviour
 
         verticalSpeed += gravity * Time.deltaTime;
 
-        Vector3 totalMove = moveDirection * moveSpeed;
+        Vector3 totalMove = moveDirection * currentMoveSpeed;
         totalMove.y = verticalSpeed;
 
         controller.Move(totalMove * Time.deltaTime);
